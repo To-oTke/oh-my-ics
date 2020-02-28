@@ -5,10 +5,10 @@ on run {input, parameters}
 		repeat with i in input
 			set t to i as string
 			if t ends with ".ppt" then
-				set pdfPath to my makeNewPath(i)
+				set newPath to my makeNewPath(i)
 				open i
-				save active presentation in pdfPath as save as PPTX -- save in same folder
-				set end of theOutput to pdfPath as alias
+				save active presentation in newPath as save as PPTX -- save in same folder
+				set end of theOutput to newPath as alias
 			end if
 		end repeat
 	end tell

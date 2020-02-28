@@ -166,3 +166,5 @@ def logical_or(left: Exp, right: Exp) -> int:
 >
 > 如果原变量的类型是 `signed`，即有符号的，那么采用原数字的最高位来补位（即，保留原有的符号位不变）。
 
+## Information Storage
+

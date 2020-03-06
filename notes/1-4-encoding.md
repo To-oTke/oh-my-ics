@@ -4,8 +4,7 @@
 
 * Virtual Memory
 * Byte Ordering
-* Representing Strings and Code
-* Integer Encoding
+* Representing String, Code, and Numbers
 
 ## Virtual Memory
 
@@ -89,7 +88,7 @@ VM 这层抽象的实现同时包括硬件和软件层面。
 
 > 注意无论大端小端，字符串（也就是 Byte Span）的排列顺序也是固定的。地址位符合直觉地从索引 0 处向后递增。
 
-## Accessing an Object
+## Representing an Object
 
 ### Transportability
 
@@ -138,4 +137,51 @@ void show_bytes( byte_pointer start, size_t len ) {
 用这个实用程序，可以看到不同机器下的实际内存布局。
 
 ![image-20200306121404475](1-4-encoding.assets/image-20200306121404475.png)
+
+## Representing Codes
+
+### `sum.c`
+
+给出一个简单的程序 `sum.c`。里面只包括一个毫无用处的函数。
+
+```c
+int sum( int x, int y ) {
+    return x + y;
+}
+```
+
+在不同平台下将其编译後可以得到如下二进制文件：
+
+```
+Linux 32: 	55 89 e5 8b 45 0c 03 45 08 c9 c3
+Windows: 	55 89 e5 8b 45 0c 03 45 08 5d c3
+Sun: 		81 c3 e0 08 90 02 00 09
+Linux 64: 	55 48 89 e5 89 7d fc 89 75 f8 03 45 fc c9 c3
+Darwin:		55 48 89 e5 89 7d fc 89 75 f8 03 75 f8 89 f0 5d c3
+```
+
+看起来都不一样呢。
+
+### Disassembly
+
+以 Darwin 平台为例，对上面的代码进行反汇编，可以得到下面的汇编代码：
+
+```assembly
+_sum:
+    pushq	%rbp
+    movq	%rsp, %rbp
+    movl	%edi, -4(%rbp)
+    movl	%esi, -8(%rbp)
+    movl	-4(%rbp), %esi
+    addl	-8(%rbp), %esi
+    movl	%esi, %eax
+    popq	%rbp
+    retq
+```
+
+> 写完编译器 Lab 之后，对这种简单代码倍感亲切（×
+
+总归，就是，每一段指令都可以被编码成二进制数字，并储存在文件系统中等待被载入内存并执行。
+
+## Represeting Numbers
 

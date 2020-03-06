@@ -185,3 +185,191 @@ _sum:
 
 ## Represeting Numbers
 
+请回头看 `1-2-bits.md` 里关于无符号整数、有符号整数和浮点数的表示方式。
+
+![image-20200306123802322](1-4-encoding.assets/image-20200306123802322.png)
+
+事实是，存在三类编码方式不完全一致的数字。
+
+然而在实际的编码工作之中，我们又有必要对其进行转换。
+
+### Integral Data Types in C
+
+* Signed Type
+  * `char`
+  * `short` (`int`)
+  * (`int`)
+  * `long` (`int`)
+* Unsigned Type
+  * `unsigned char`
+  * `ungisned short` (`int`)
+  * `unsigned` (`int`)
+  * `unsigned long` (`int`)
+
+括号内的内容代表可以省略。
+
+> 对，假如省略一切类型，会被 fallback 到 `int` 上头。
+
+> 其他很多语言，例如 Java，没有「无符号」这一类型。
+
+### Typical Ranges
+
+#### 32-bit
+
+在一部典型的 32 位操作系统上，C 标准的类型所能表达的数字范围如下：
+
+* `char`：$[-128, 127]$
+* `unsigned char`：$[0, 255]$
+* `short` (`int`)：$[-32768, 32767]$
+* `unsigned short` (`int`)：$[0, 65535]$
+* (`int`)：$[-2147483648, 2147483647]$
+* `unsigned` (`int`)：$[0, 4294967295]$
+* `long` (`int`)：$[-2147483648, 2147483647]$
+* `unsigned long` (`int`)：$[0, 4294967295]$
+* `int32_t`：$[-2147483648, 2147483647]$
+* `uint32_t`：$[0, 4294967295]$
+* `int64_t`：$[-9223372036854775800, 9223372036854775800]$
+* `uint64_t`：$[0, 18446744073709551615]$
+
+#### 64-bit
+
+64 位则如下：
+
+* `char`：$[-128, 127]$
+* `unsigned char`：$[0, 255]$
+* `short` (`int`)：$[-32768, 32767]$
+* `unsigned short` (`int`)：$[0, 65535]$
+* (`int`)：$[-2147483648, 2147483647]$
+* `unsigned` (`int`)：$[0, 4294967295]$
+* `long` (`int`)：$[-9223372036854775800, 9223372036854775800]$
+* `unsigned long` (`int`)：$[0, 18446744073709551615]$
+* `int32_t`：$[-2147483648, 2147483647]$
+* `uint32_t`：$[0, 4294967295]$
+* `int64_t`：$[-9223372036854775800, 9223372036854775800]$
+* `uint64_t`：$[0, 18446744073709551615]$
+
+#### Standard
+
+C 标准规定的**最小**范围是：
+
+* `char`：$[-127, 127]$
+* `unsigned char`：$[0, 255]$
+* `short` (`int`)：$[-32767, 32767]$
+* `unsigned short` (`int`)：$[0, 65535]$
+* (`int`)：$[-32767, 32767]$
+* `unsigned` (`int`)：$[0, 65535]$
+* `long` (`int`)：$[-2147483648, 2147483647]$
+* `unsigned long` (`int`)：$[0, 4294967295]$
+* `int32_t`：$[-2147483648, 2147483647]$
+* `uint32_t`：$[0, 4294967295]$
+* `int64_t`：$[-9223372036854775800, 9223372036854775800]$
+* `uint64_t`：$[0, 18446744073709551615]$
+
+## Converting and Casting
+
+何谓 Convert，何谓 Cast？
+
+* 隐式进行的类型转换称为 Conversion。
+* 显式进行的类型转换称为 Casting。
+
+### Signed vs. Unsigned
+
+例如，有符号类型和无符号类型要想互相做 Casting，需要用这样的语法：
+
+```c
+int tx, ty;
+unsigned /* int */ ux, uy;
+tx = (int) ux;
+uy = (unsigned /* int */) ty;
+```
+
+而隐式的 Conversion 就可以这么写：
+
+```c
+int tx, ty;
+unsigned /* int */ ux, uy;
+tx = ux;
+uy = ty;
+```
+
+### Unsigned Constants
+
+注意，在 C 里面写出一个数字字面量（如 `-5`，`42`）这样的，默认会把它作为有符号量进行处理。
+
+要想得到一个真正无符号的字面量，则需要在数字後面附加一个 `U`。
+
+例如，`4294967259U` 的类型就是 `unsigned`。
+
+### Casting Convention
+
+在你不知道的时候，可能就进行了 Convention…比如，在进行 `<`、`>`、`==`、`<=`、`>=` 比较的时候。
+
+假如对一个有符号整数和一个无符号整数施加上面的比较，那么有符号数字会被隐含地 Cast 成无符号的数字，再进行比较。
+
+但假如两个都是有符号的整数或是无符号的整数，那么就不需要进行 Casting，直接按照其规则进行比较。
+
+![image-20200306130513621](1-4-encoding.assets/image-20200306130513621.png)
+
+### Expanding and Truncating
+
+现在我们来假想把一个整数类型转换为另一个不同长度的整数类型。
+
+结果要么是变长了要么是变短了。变长了就叫做 Expanding，变短了就叫做 Truncating。
+
+#### Truncating
+
+截短没什么说的，直接把高位切了就行。
+
+![image-20200306130850814](1-4-encoding.assets/image-20200306130850814.png)
+
+#### Expanding
+
+延长呢？假如原始值是个无符号的类型，那么永远在高位填补 $0$（Zero Extension）；
+
+假如原始值是有符号的，那么就需要在高位填补符号位（Sign Extension），以免改变符号。
+
+![image-20200306130945426](1-4-encoding.assets/image-20200306130945426.png)
+
+## Advice
+
+### Avoid Casting
+
+```c
+float sum_elements( float a[], unsigned length ) {
+    int /* !!! */ i;
+    for ( i = 0; i <= length – 1; i++ )
+        result += a[ i ];
+}
+```
+
+在这里，应该将 `i` 直接定义为无符号的类型。
+
+### Careful Manip with Unsigned
+
+```c
+/* Prototype for library function strlen */
+size_t strlen( const char* s ); /* size_t is usigned */
+
+/* Determine whether string s is longer than string t */
+/* WARNING: This function is buggy */
+int strlonger( char* s, char* t ) {
+    return strlen( s ) - strlen( t ) > 0;
+}
+```
+
+在对两个 `unsigned` 数字进行加减的时候，一定要非常小心。因为得到的结果也必定是 `unsigned`，要当心负溢出。
+
+### Buggy `getpeername()`
+
+> See `./1-4-encoding.assets/getpeername_illust.c`.
+
+## Summary
+
+* Collections of bits
+  * Bit vectors
+  * Masks
+* Addresses
+* Multiprecision Arithmetic
+
+> Numbers are represented by arrays of words
+

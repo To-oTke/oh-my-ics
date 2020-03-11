@@ -19,7 +19,7 @@ def logical_or(left: Exp, right: Exp) -> int:
             return 0
         else:
             return 1
-        else:
-            # right exp was short-cut
-            # when left.eval != 0
+    else:
+        # right exp was short-cut
+        # when left.eval != 0
         return 1

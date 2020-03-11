@@ -1,5 +1,19 @@
 # 1.1 Intro
 
+## Textbook
+
+* 1.2
+
+* 1.4.1
+
+* 1.7(before 1.7.1)
+
+* 1.7.3
+
+* 1.8
+
+* 1.9.2 (the first paragraph), the first 4 asides in chapter 1
+
 ## Outline
 
 ### Track Map

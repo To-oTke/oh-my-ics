@@ -1,5 +1,15 @@
 # 1.4 Encoding
 
+## Textbook
+
+* 2.1.3
+
+* 2.1.4
+
+* 2.1.5
+
+* 2.2
+
 ## Outline
 
 * Virtual Memory

@@ -1,5 +1,9 @@
 # 1.3 Binary Operations
 
+## Textbook
+
+* 1.2
+
 ## The GNU C Compiler Toolchain
 
 在我们用 GCC 的时候，我们在用什么？

@@ -1,5 +1,11 @@
 # 1.2 Bits
 
+## Textbook
+
+* 1.1
+
+* 2.1.1
+
 ## Representing Information
 
 Bits…我们用这个来表示信息的。

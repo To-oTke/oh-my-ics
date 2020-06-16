@@ -73,7 +73,9 @@ mov src, dest
 * `movq`
   * Move Quad Word，移动八个字节（四个字）
 * `movabsq`
-  * Move Absolute Quad Word，奇葩指令
+  * Move Absolute Quad Word，移动八个字节（四个字）
+
+> `movabsq` 存在的意义是，`movq` 无法处理 `src` 为八字节立即数的情况，而 `movabsq` 可以。
 
 `movb`、`movw` 都只会设置自己被要求的低位，而不去改变 `dest` 的高位。但 `movl` 在设置低 32 位之後，会同时将高 32 位全部置为 0。
 

@@ -65,4 +65,6 @@
 
 ## Labs
 
-在 ICS 的 Lab 里面，写过
+在 ICS 的 Lab 里面，写过 Assembler、Simulator 和 Processor。
+
+下学期（不是），我们会学到更多关于这套指令集的内容。

@@ -1,0 +1,17 @@
+
+Verbosity leads to unclear, inarticulate things.
+
+0 5 10 15 20 25
+
+7 v 826
+
+6 austinpowers
+
+-0-%+1
+
+30064771774
+
+40
+
+
+Bomb5 不唯一：选择 ASCII 码 % 16 == D 0 D 5 B 1 的六个 char 即可。

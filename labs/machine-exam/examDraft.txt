@@ -1,0 +1,53 @@
+For NASA, space is still a high priority.
+
+
+1 -> %rbx
+
+
+%rbx += 1
+
+%rbx -> %rax
+
+%rax *= *(%rbp)
+
+%rax -= 1
+
+compare %rax, %rbp + 4
+
+equal: %rbp += 4
+
+if %rbx == 6:
+
+over.
+
+
+rbx	rax	rbp
+2	2 * 1
+
+6
+
+24
+
+120
+
+720
+
+5040
+
+(gdb) x /d 0x401e200x401e20 <array.3074>:  2(gdb) x /d 0x401e280x401e28 <array.3074+8>:        6(gdb) x /d 0x401e300x401e30 <array.3074+16>:       12(gdb) x /d 0x401e380x401e38 <array.3074+24>:       9(gdb) x /d 0x401e400x401e40 <array.3074+32>:       4(gdb) x /d 0x401e480x401e48 <array.3074+40>:       14(gdb) x /d 0x401e500x401e50 <array.3074+48>:       11(gdb) x /d 0x401e580x401e58 <array.3074+56>:       15
+
+For NASA, space is still a high priority.
+1 1 2 7 34 203 fp
+7 g 77
+
+abcdef
+
+54
+
+]`]`]`
+
+10
+
+^a^a^a
+
+kkkkkk

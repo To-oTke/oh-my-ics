@@ -1,0 +1,454 @@
+strings_not_equal(%rdi（输入）, 2410)
+
+%输入->%rbx
+
+%rsi(6410)->%rbp
+
+(string_length)
+
+compare if %rdi（输入） == 0
+
+如果 = 0: jump 1807（清零eax）
+
+如果不 = 0:
+
+清零eax
+输入（rdi） 递增
+%eax = 1
+compare 0x0, (%rdi)，rdi 作为内存地址去读取
+如果不是0
+
+就求出这个东西的长度
+
+%eax（字符串长度）->%r12d
+把 rbp -> rid
+
+
+key
+// 27c7
+0x555555554000
+0x55555555646e
+
+
+设 %rsi = x。
+
+%rsi + 4 -> %rcx
+%rsi + 20 -> %rax
+X + 20 入栈
+
+%rsi + 16 -> %rax
+x + 16 入栈
+
+%rsi + 12 -> %r9
+%rsi + 8 -> %r8
+
+读取sscanf参数：
+(”%d %d %d %d %d %d“, %rsp, %rsi + 4, %rsi + 8, %rsi + 12, %rsi + 16, %rsi + 20);
+调用sscanf函数
+
+x + 5,
+比较 x + 5 与 (4 + %rbx)
+
+
+--- phase 3 ---
+
+
+%rsp + 7 -> %rcx
+
+%rsp + 12 -> %rdx
+
+%rsp + 8 -> %r8
+
+"%d %c %d" -> %rsi
+
+sscanf(输入的 char*, "%d %c %d", %rsp + 12, %rsp + 7, %rsp + 8)
+
+compare: 结果如果 <= 2: bomb
+
+%rsp + 12: 第一个整数
+
+%rsp + 7: char
+
+%rsp + 8: 第二个整数
+
+compare %rsp + 12: 7。
+如果不等于，就爆炸。
+
+把 7 -> %eax 里。
+
+0x555555556480 -> %rdx
+
+movslq: %rdx + %rax * 4 -> %rax
+
+0x555555556480 + 12 = 0x55555555648C -> %rax
+
+%rdx + %rax = %rax 0xAAAAAAAAC90C
+
+jump to that place. 1530
+
+118 -> %eax
+
+compare: 826，第二个整数
+
+compare: %rax: C
+
+char: 0
+
+v
+
+7 v 826
+
+
+
+phase 4
+
+
+开 18 字节栈空间
+
+%rsp + 12 -> %rdx
+
+0x2474 -> %rsi, 这里面放的是 "%d"
+
+0x555555556474
+
+
+sscanf(输入的 char*, "%d", %rsp + 12(0xc));
+
+所以输入的整数会被放到 %rsp + 12 里。
+
+如果 sscanf 得到的数目不是 1: 爆炸
+
+否则：去15c9
+
+比较 %rsp + 12 是不是大于0:
+如果大于： 去15af
+15af：把 %rsp + 12 放到 %edi 里去调用 func4
+
+并比较返回值和 0x1cb91(117649)
+如果相等就结束，否则会爆炸。
+
+那么只要让 func4(int x) 返回117649就好了
+
+
+func 4 干什么吃呢？
+
+首先，1 -> %eax（返回值寄存器）
+
+然后，判断 %edi 是不是 <= 0。 是：直接完蛋
+
+否则：开 8 个栈空间
+
+
+// Swift
+
+func func4(_ x: Int) -> Int {
+	if x > 0 {
+		return 7 * func4(n - 1);
+	else {
+		return 1;
+	}
+}
+
+// Python
+
+>>> def func4(n):
+...     if n > 0:
+...             return 7 * func4(n - 1)
+...     else:
+...             return 1
+
+
+>>> func4(6)
+117649
+
+
+
+
+phase 5
+
+开 0x10 的栈空间
+
+%rdi （我的 char *） -> %rbx
+
+调用 string_length 函数
+
+判断长度是不是 6.
+
+如果是： 去 15e9。
+否则： bomb。
+
+15e9: %eax = 0.
+
+然后 24a0 -> %rcx
+
+
+isrveawhobpnutfgSo you think you can stop the bomb with ctrl-c, do you?
+
+
+// 38	53	38	34	35	37
+// &	5	&	"	#	%
+
+D 0 D 5 B 1	
+
+- 0 - % + 1
+
+-0-%+1
+
+然后， %rbx + %rax -> %edx
+（我的 插入* + 0) -> %edx
+
+和0xf 做 &，只剩下最后一个字
+（a)
+我输入的第一个 char 现在在 %edx 里
+
+然后，*（%rcx + %rdx） -> %edx
+把 %rcx 的地址 + 我输入的最后一个偏移值 -> %edx 里。
+
+拿出 %edx 的最后一位，放到 %rsp + 0(1, 2, 3, 4, 5) + 9 里。
+
+
+
+$rax + 1, 直到 %rax == 6。
+
+重复上面操作：6次。
+
+重复完了之后，把 %rsp + 15 = 0
+%rsp + 9 -> %rdi
+
+2477(0x555555556477) -> %rsi = titans
+
+titans
+
+
+判断 strings equal
+
+如果相等OK 不等：boom 你死了
+
+
+
+
+phase 6:
+
+开 8 个字节的栈空间
+
+10 -> %edx, 3rd argument
+
+0 -> % esi, 2nd argument
+
+strtol(我的 char *, NULL, 10);
+
+return value -> <node0>
+&<node0> -> %rdi
+
+call fun6!
+
+fun6(&<node0>);
+
+&结果 -> %rdi -> %rax
+
+*(%rdi + 8) -> %r8
+
+// 把 node 后一块内存的那部分内容存起来
+
+0 -> *(%rdi + 8)
+
+// 把这块内存赋 0
+
+%rdi -> %rdx
+
+// &结果->%rdx
+
+%rax -> %rcx
+
+// &结果->%rcx
+
+if let %rdx == %rcx
+
+// 废话，能不等吗
+
+%r8 -> %rax
+
+// 把 node 后一块内存的那部分内容放到 %rax
+
+*(8 + %r8) -> %rcx
+
+// 把后后一块内存中的内容放到 %rcx
+
+%rdx -> *(8 + %r8)
+
+// 放回去
+
+%rax -> %rdx
+
+// 放回去
+
+%rcx -> %r8
+
+// 放回去
+
+
+/* end */
+
+
+
+*(8 + %rax) -> %rax
+
+// 把 %rax 老后面的一块内存放在 %rax 里
+
+
+*(8 + %rax) -> %rax
+
+// 把 %rax 老后面的一块内存放在 %rax 里
+
+
+
+*(8 + %rax) -> %rax
+
+// 把 %rax 老后面的一块内存放在 %rax 里
+
+做三次（***)...
+
+<node0> -> %ecx
+
+if *(%rax) == %rcx {
+	// OK
+} else {
+//	bomb
+}
+
+0x555555554000
+
+0x555555758750
+
+	204750
+
+
+
+
+
+
+secret phase:
+
+10 ->  %edx
+
+0 -> %esi
+
+%rax -> %rdi
+// read_line 的返回值，
+作为调用 strtol 的第一个参数。
+
+作用类似于 strtol(/* my char */, NULL, 10);
+转换为十进制数字。
+
+%rax -> %rbx,
+转换结果放到 %rbx 里
+
+%rax - 1 -> %eax
+
+IF %eax > 0x3e8(1000):
+	// bomb
+
+
+%ebx -> %esi
+
+204670 -> %rdi
+
+204670 实际对应着
+
+0x555555758670.
+
+这里面放的是：36！
+
+这时候调用函数 fun7(&36, 输入的数字)
+
+如果fun7 返回1:
+	OK！
+否则：
+	boom！
+
+
+现在问题就是让 fun7(&36, ???) 返回 1.
+
+fun7 干了啥呢？
+
+if %rdi == 0:
+	return -1.
+
+
+然后开8个栈空间，
+把 *(%rdi) -> %edx.
+也就是 %edx 里放着36.
+
+比较 %esi 和 %edx。
+
+
+if 输入value （%esi） > 36:
+	那么 *(%rdi + 8) -> %rdi
+	递归调用自己。
+
+	返回他的 返回值 * 2
+else:
+	清零 %eax
+	if %esi == %edx:
+		return 0
+	else:
+		*(%rdi + 16) -> %rdi
+		递归调用自己。
+		return 2 * 她的返回值 + 1.
+
+这里有一个链表…
+
+0x555555758670 <n1>:    36(gdb) x /d 0x555555758678
+(gdb) x /d 0x5555557586900x555555758690 <n21>:   8(gdb) x /d 0x5555557587100x555555758710 <n31>:   6
+(gdb) x /d 0x5555557581600x555555758160 <n41>:   1
+
+36 -> 8 -> 6 -> 1. 没了
+
+
+0x555555554000
+
+281d
+2823
+0x55555555681d
+0x555555556823
+0x204910
+
+0x555555758910
+0x55555555681d
+
+%d %s
+
+281d
+204910
+
+"austinpowers"： phase4 的 key, towards secret_phase
+
+
+
+fun7:
+input	return
+3	bad
+4	bad
+5	bad
+7	4
+8	
+16	0xfffffff2
+
+20	2
+22	2
+
+
+25	0xfffffff6
+30	0xfffffff6
+31	0xfffffff6
+33	0xfffffff6
+34	0xfffffff6
+35	6
+36	0
+37	0xfffffff1
+38	0xfffffff1
+39	
+40	1
+...
+
+secret_phase 是试出来的…	

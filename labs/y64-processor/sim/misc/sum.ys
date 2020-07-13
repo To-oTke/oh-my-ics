@@ -1,0 +1,40 @@
+main:       irmovq  stack, %rsp
+            irmovq  base, %rbp
+            irmovq  ele1, %rdi
+            xorq    %rax, %rax
+            call    sum_list
+            halt
+
+sum_list:   pushq   %rdi
+            pushq   %rdx
+            irmovq  $0x0, %rax
+            rrmovq  %rdi, %rdx
+loop:       rrmovq  %rdx, %rdi
+            mrmovq  (%rdi), %r10
+            # Get the value into the %r10
+            addq    %r10, %rax
+            # Add that to %rax
+            mrmovq  8(%rdi), %rdx
+            andq    %rdx, %rdx
+            jne     loop
+cleanup:    xorq    %r10, %r10
+            xorq    %rdx, %rdx
+            popq    %rdx
+            popq    %rdi
+            ret
+
+.align 8
+ele1:
+            .quad   0x00a
+            .quad   ele2
+ele2:
+            .quad   0x0b0
+            .quad   ele3
+ele3:
+            .quad   0xc00
+            .quad   0
+
+            .pos    0x200
+base:       nop
+            .pos    0x400
+stack:      nop

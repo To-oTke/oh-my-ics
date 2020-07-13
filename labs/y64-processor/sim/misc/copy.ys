@@ -1,0 +1,65 @@
+main:       irmovq  stack, %rsp
+            irmovq  base, %rbp
+            irmovq  src, %rdi
+            irmovq  dest, %rsi
+            irmovq  $3, %rdx
+            xorq    %rax, %rax
+            pushq   %r10
+            pushq   %r11
+            call    exec_copy
+            popq    %r11
+            popq    %r10
+            halt
+
+exec_copy:  pushq   %r14
+            pushq   %r13
+            pushq   %r12
+            rrmovq  %rdx, %r10
+            irmovq  $1, %r12
+            subq    %r12, %r10
+copy_loop:  rrmovq  %rdi, %r14
+            rrmovq  %rsi, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            addq    %r10, %r14
+            addq    %r10, %r13
+            mrmovq  (%r14), %r11
+            rmmovq  %r11, (%r13)
+            xorq    %r11, %rax
+            subq    %r12, %r10
+            jge     copy_loop
+clean_up:   popq    %r12
+            popq    %r13
+            popq    %r14
+            ret
+
+
+.align 8
+# Source block
+src:
+        .quad 0x00a
+        .quad 0x0b0
+        .quad 0xc00
+# Destination block
+dest:
+        .quad 0x111
+        .quad 0x222
+        .quad 0x333
+
+# Stack stuff
+            .pos    0x200
+base:        nop
+            .pos    0x400
+stack:       nop

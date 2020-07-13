@@ -1,0 +1,130 @@
+# Modified version of ncopy.ys
+# 
+# ID: 517030910168
+# 
+# Name: Yu Xiqian
+# 
+#/* $begin ncopy-ys */
+##################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+##################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+##################################################################
+# You can modify this portion
+# All right, all right
+# Loop header
+
+Loop:	iaddq $-7, %rdx			# len--
+		jge Cont
+		# iaddq $7, %rdx
+		jmp Fin
+		
+Cont:	mrmovq (%rdi), %r10		# read val from src...
+		mrmovq 8(%rdi), %r11	# read val from src...
+		mrmovq 16(%rdi), %r12	# read val from src...
+		mrmovq 24(%rdi), %r13	# read val from src...
+		mrmovq 32(%rdi), %r14	# read val from src...
+
+		andq %r10, %r10
+		jle Skip1
+
+		iaddq $1, %rax
+
+Skip1:	andq %r11, %r11
+		jle Skip2
+
+		iaddq $1, %rax
+
+Skip2:	andq %r12, %r12
+		jle Skip3
+
+		iaddq $1, %rax
+
+Skip3:	andq %r13, %r13
+		jle Skip4
+
+		iaddq $1, %rax
+
+Skip4:	andq %r14, %r14
+		jle Skip5
+
+		iaddq $1, %rax
+
+Skip5:	
+		rmmovq %r10, (%rsi)		# ...and store it to dst
+		rmmovq %r11, 8(%rsi)	# ...and store it to dst
+		rmmovq %r12, 16(%rsi)	# ...and store it to dst
+		rmmovq %r13, 24(%rsi)	# ...and store it to dst
+		rmmovq %r14, 32(%rsi)	# ...and store it to dst
+
+		mrmovq 40(%rdi), %r10	# read val from src...
+		mrmovq 48(%rdi), %r11	# read val from src...
+
+		andq %r10, %r10
+		jle SkipA
+
+		iaddq $1, %rax
+
+SkipA:	andq %r11, %r11
+		jle SkipB
+
+		iaddq $1, %rax
+
+SkipB:	rmmovq %r10, 40(%rsi)	# ...and store it to dst
+		rmmovq %r11, 48(%rsi)	# ...and store it to dst
+
+		iaddq $56, %rdi
+		iaddq $56, %rsi
+
+		jmp Loop				# goto Loop:
+
+
+Fin:	iaddq $5, %rdx
+		jl LastOne
+		jmp Go
+
+Loop2:	iaddq $-2, %rdx			# len -= 2
+		jl LastOne
+Go:		mrmovq (%rdi), %r10		# read val from src...
+		mrmovq 8(%rdi), %r11		# read val from src...
+		rmmovq %r10, (%rsi)		# ...and store it to dst
+		rmmovq %r11, 8(%rsi)		# ...and store it to dst
+		andq %r10, %r10
+		jle Skip7
+		iaddq $1, %rax
+Skip7:	andq %r11, %r11
+		jle Skip8
+		iaddq $1, %rax
+Skip8:	iaddq $16, %rdi
+		iaddq $16, %rsi
+		jmp Loop2
+
+LastOne:	iaddq $1, %rdx
+			jl Done
+			rrmovq %rax, %r11
+			iaddq $1, %r11
+			mrmovq (%rdi), %r10		# read val from src...
+			rmmovq %r10, (%rsi)		# ...and store it to dst
+			andq %r10, %r10
+			cmovge %r11, %rax
+SkipLast:	ret
+
+# OK, OK
+##################################################################
+# Do not modify the following section of code
+# Function epilogue.
+Done:
+	ret
+##################################################################
+# Keep the following label at the end of your function
+End:
+#/* $end ncopy-ys */

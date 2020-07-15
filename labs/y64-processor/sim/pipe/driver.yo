@@ -14,9 +14,9 @@
 0x03b:                      | StartFun:
                             | # Modified version of ncopy.ys
                             | # 
-                            | # ID: 517030910168
+                            | # ID: 11037
                             | # 
-                            | # Name: Yu Xiqian
+                            | # Name: $NAME
                             | # 
                             | #/* $begin ncopy-ys */
                             | ##################################################################

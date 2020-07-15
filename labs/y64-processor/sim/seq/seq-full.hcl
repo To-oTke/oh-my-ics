@@ -2,9 +2,9 @@
 # 
 # Modified version of seq-full.hcl
 #
-# ID: 517030910168
+# ID: 11037
 # 
-# Name: Yu Xiqian
+# Name: $NAME
 #
 #/* $begin seq-all-hcl */
 ####################################################################

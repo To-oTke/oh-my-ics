@@ -1,4 +1,4 @@
-# 2.2 Sequential CPU Implementation
+# 2.2 Sequential CPU
 
 ## Textbook
 

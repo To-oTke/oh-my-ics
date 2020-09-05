@@ -286,5 +286,228 @@ void swap();
 
 ##### With the Help of Compilers
 
-为了让链接器能够完成这样的工作，编译器已经将每个文件所定义、声明的全局变量、函数都放到了 ROF 的特殊区段之中。
+为了让链接器能够完成这样的工作，编译器已经将每个文件所定义、声明的全局变量、函数都放到了 ROF 的特殊区段之中。但是，他们的位置需要重新被填充。
 
+例如，`main.o` 中，`main` 函数位于 `.txt` 区段的 `0` 位置，但是在结果二进制文件中位于 `0x4004d6`。同时，其中 `buf` 变量位于 `.data` 区段的 `0` 位置，但是最终被定位到了 `0x601030`。
+
+链接器已经记录了那些目前暂时采用相对寻址，而以全 `0` 填充的代码位置。在信息充足之后，会将他们填充上正确的值。
+
+```assembly
+    e8 00 00 00 00
+	# ->
+	e8 07 00 00 00			# call 4004eb <swap>
+							# (%rip: 0x4004e4)
+    48 8b 05 00 00 00 00
+	# ->
+	48 8b 05 37 0b 20 00	# mov 0x200b37(%rip), %rax  
+							# (%rip: 0x400501)
+00<bufp0>:
+    00:		00 00 00 00 00 00 00 00
+	# ->
+601038<bufp0>:
+    601038: 	30 10 60 00 00 00 00 00
+```
+
+例如，`call` 指令的调用地址（因为采用相对寻址，所以这个值还跟这条代码所在的内存地址有关）就被更新了；按照小端法读出的内存偏移量是 `+0x7`。`mov` 的待遇类似。而 `bufp0` 这个函数呢，在 `.data` 区段中是刚好位于 `0x0` 的位置，但是被链接到可执行文件中之后，就变成了 `0x601038`。
+
+## Structure
+
+### Object Files
+
+简而言之，Object Files 可以分为下面几类：
+
+* Relocatable（可重定位的）Object File
+	* 其中内存寻址都避免了绝对寻址，而是采用 `(%rip)` 相对寻址的可执行文件。
+	* 这种 Object File 可以简单地被链接器同其他文件链接。
+	* 其中不仅包含指令，还包含许多数据区段。
+		* 代码指令独占一段。
+		* 初始化了的全局变量占一段。
+		* 未初始化的全局变量占一段。
+* Executable（可执行的）Object File
+	* 已经打包完成可以被直接执行了的 Object File。
+* Shared（共享的）Object File
+	* 一类特殊的可重定位文件。
+	* 不一定要由链接器负责处理，可以在任何时候（包括可执行文件装载时和程序运行时）动态链接。
+
+### ELF
+
+是 Executable & Linkable Format（ELF）的简称。
+
+按字面意思理解，就是既（可能）可以被拿来运行、又可以拿来链接（包括静态和动态链接）的一种统一格式。
+
+那么，来看看它的具体结构吧！
+
+#### Sections
+
+![image-20200905124952862](2-13-linking.assets/image-20200905124952862.png)
+
+#### ELF Header
+
+文件的一开头包含了这些重要信息：
+
+* Magic Number（魔数）
+	* 一组特殊的数字，用来确认这是个 ELF 文件
+	* 被定义为 `\0x7f`、`E`、`L`、`F`
+	* `e_ident` 的前四个字节必须填充这些值，否则将不被认为是 ELF 格式文件
+* Type（类型）
+	* 在 `.o`（是可重定位文件）、`exec`（是可执行文件）、`.so`（是共享库）之间选择一种
+* Machine（及其平台）
+	* 确认这个 ELF 所对应的机器平台、内核类型、等等
+* Byte Ordering（字节序）
+	* 决定大端或小端
+* Section Header Table（段头表）的起始地址
+	* 段头表，其实就是个地址数组，其中的每个地址都指向了一个 Section 条目的头
+	* 像是题图中的 `.text`、`.rodata` 之类的，每个都是一个 Section
+	* 因为 Section 长度不定，所以才需要准备一张段头表，以备查阅
+	* 而这张段头表在哪里呢？实际上是被放在了所有 Section 都结束之後的最後
+	* 因为他的位置也不确定，所以才需要在 Header 中保存这张段头表的起始地址
+* （以及其它一些不想说的东西）
+
+```c
+typedef uint64_t Elf64_Addr;
+typedef uint16_t Elf64_Half;
+typedef uint64_t Elf64_Off;
+typedef int32_t	Elf64_Sword;
+typedef int64_t	Elf64_Sxword;
+typedef uint32_t Elf64_Word;
+typedef uint64_t Elf64_Lword;
+typedef uint64_t Elf64_Xword;
+
+typedef struct {
+	unsigned char	e_ident[16];	/* ELF identification */
+	Elf64_Half		e_type;			/* Object file type */
+	Elf64_Half		e_machine;		/* Machine type */
+	Elf64_Word		e_version;		/* Object file version */
+	Elf64_Addr		e_entry;		/* Entry point address */
+	Elf64_Off		e_phoff;		/* Program header offset */
+	Elf64_Off		e_shoff;		/* Section header offset */
+	Elf64_Word		e_flags;		/* Processor-specific flags */
+	Elf64_Half		e_ehsize;		/* ELF header size */
+	Elf64_Half		e_phentsize;	/* Size of program header entry */
+	Elf64_Half		e_phnum;		/* Number of program header entries */
+	Elf64_Half		e_shentsize;	/* Size of section header entry */
+	Elf64_Half		e_shnum;		/* Number of section header entries */
+	Elf64_Half		e_shstrndx;		/* Section name string table index */
+} Elf64_Ehdr;
+```
+
+表现在代码中，就是这个样子的一个 `struct`。
+
+#### Section Header
+
+> 注意，上面讨论的 Header 是 ELF 文件的总领 Header。这里要讨论的是保存在段头表里的 Section Header。不要混淆。
+
+段头表条目就简单多了。
+
+```c
+typedef struct {
+	Elf64_Word		sh_name;		/* Section name (index into the
+					   				   section header string table). */
+	Elf64_Word		sh_type;		/* Section type. */
+	Elf64_Xword		sh_flags;		/* Section flags. */
+	Elf64_Addr		sh_addr;		/* Address in memory image. */
+	Elf64_Off		sh_offset;		/* Offset in file. */
+	Elf64_Xword		sh_size;		/* Size in bytes. */
+	Elf64_Word		sh_link;		/* Index of a related section. */
+	Elf64_Word		sh_info;		/* Depends on section type. */
+	Elf64_Xword		sh_addralign;	/* Alignment in bytes. */
+	Elf64_Xword		sh_entsize;		/* Size of each entry in section. */
+} Elf64_Shdr;
+```
+
+其中，我们需要重点关注的有下面几项：
+
+* `sh_name`
+
+	* 顾名思义，保存的是这个 Section 的名字
+	* 但是，这里放的不是字符串指针，而是特殊区段 `strtab`（专门保存字符串的一个区段）中的索引。用这个索引可以找出要求字符串的地址
+
+* `sh_type`
+
+	* 在下面几种中择一：
+		* `SHT_PROGBITS`
+		* `SHT_SYMTAB`
+		* `SHT_STRTAB`
+		* `SHT_REL`
+		* `SHT_NOBITS`
+
+	> 可以留意到这里有个问题：每一个 Section 的名字需要依赖 `strtab` 区段才能确定，但是如果不知道每个 Section 的名字，该如何找到 `strtab` 区段呢？
+	>
+	> 答案是依靠 `sh_type`。`strtab` 区段拥有特别的类型标识 `SHT_STRTAB`。
+
+* `sh_addr`
+	* 对于那些需要被拷贝到内存中执行的区段（主要是指令代码）来说，设置 `sh_addr` 来制定将其拷贝到何处开始的内存空间中
+* `sh_offset`
+	* 从 ELF 文件头开始，数到当前区段的头为止，经过的字节数
+* `sh_size`
+	* 这个区段的大小（字节数）
+* `sh_addralign`
+	* 指明内存布局策略
+* `sh_entsize`
+	* 某些类型的 Section 是一张表，这一项用于指明表中每个条目的大小（字节数）
+
+#### Sections
+
+下面介绍一些特别的 Section。
+
+##### `.strtab`
+
+通常位于 ELF 的尾部。其实就是一堆字符串叠在一起。用 `\0` 来标识一个字符串的结束。
+
+不仅仅包含程序中用到的静态字符串，Section 的名字和 Symbol 的名字也存在这里。
+
+特别地规定，这一区段的内存以 `\0` 开始，以 `\0` 结束。
+
+没有复杂的索引机制。要想找到第 5 个字符串，只有从头开始遍历，等待遇到第 5 个 `\0`。
+
+> 简单点也好。
+
+##### `.debug`
+
+一般来说不会生成这个区段，除非用 `gcc -g`。
+
+包含丰富内容，如侦错用符号表、临时变量、类型别名（`typedef`）、全局变量、以及完整的一份源代码。
+
+> 机器用不着这些东西。一般是写 Debugger 的人读取这些信息。
+
+##### `.line`
+
+包含弱一些的侦错辅助信息。记录汇编代码和「源代码的行号」之间的映射关系。
+
+这样，当你的程序 SegFault 的时候，你就能确认到底是哪行代码的锅了。
+
+##### `.text`
+
+这段没什么说的，单纯就是一堆程序代码。
+
+##### `.rodata`
+
+一些只读的数据（且不是字符串）。例如，如下所示的常数数组。
+
+```c
+const int test_rodata[] = { 0xaaaaaaaa, /* ... */ 0xaaaaaaaa };
+```
+
+
+
+![image-20200905133230988](2-13-linking.assets/image-20200905133230988.png)
+
+##### `.data`
+
+保存着（非平凡）初始化过的全局变量和 C 风格静态（`static`）变量。
+
+##### `.bss`
+
+> 有可能是 `Block Started by Symbol` 或 `Better Save Space` 的缩写。
+
+包含未初始化的，或者被初始化为 `0` 的全局、静态变量。
+
+特别留意，这一段虽然在 Section Header Table（段头表）中被定义了，但是实际上却没有被分配任何段空间。
+
+原因是，即使将这些变量保存下来，也没有任何好处（毕竟，如果没有必要对他们进行初始化，那么这个变量的初始值就不重要了）。所以干脆将这些变量从 ELF 文件中扫除出去，等到真正被装入内存执行时，再去给 `.bss` 分配空间，给这些变量腾地方。这样，就自然而然地将它们初始化为 `0` 了不是吗。
+
+> 但是，显然地，这种策略没有办法保存各个变量的名字及其他信息。
+>
+> 这件事情交给 `.symtab` 区段来做。
+
+那是下节课的事情了。

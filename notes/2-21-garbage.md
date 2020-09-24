@@ -9,7 +9,7 @@
 * 9.10
 * 9.11
 
-### OS: 3 Easy Pieces
+### OSTEP
 
 * Chapter 22
 
@@ -20,7 +20,7 @@
 * 垃圾回收
 * C 语言中常见的、和内存相关的 Bugs
 
-### OS: 3 Easy Pieces
+### OSTEP
 
 * 缓存管理
 * 最优的替换策略

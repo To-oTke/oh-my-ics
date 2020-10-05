@@ -1,20 +1,27 @@
-class Counter {
+#include <pthread.h>
+
+class Counter
+{
 public:
-    Counter(int Value) {
+    Counter(int Value)
+    {
         this->value = Value;
         pthread_mutex_init(&this->lock, NULL);
     }
-    ~Counter() {
+    ~Counter()
+    {
         pthread_mutex_destroy(&this->lock);
     }
-    
+
     int getValue() { return this->value; }
-    
-    int increment() {
+
+    int increment()
+    {
         pthread_mutex_lock(&this->lock);
         ++this->value;
         pthread_mutex_unlock(&this->lock);
     }
+
 private:
     int value;
     pthread_mutex_t lock;

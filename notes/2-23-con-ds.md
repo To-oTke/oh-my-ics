@@ -4,7 +4,7 @@
 
 要讨论的问题，是「基于锁的并发实现、所需要的数据结构」。
 
-## Concurrency
+## Intro
 
 ### Protection
 
@@ -254,4 +254,226 @@ def delete_node(node: Node, prev: Node):
 同样的，这带来的好处总归也有限——因为我们仍然需要保证「每个 Counter 内部累加的有序性」，因此最终这种优化方式存在天花板。
 
 ![image-20201005152157868](2-23-con-ds.assets/image-20201005152157868.png)
+
+## Linked List
+
+### Simple Version
+
+简单的链表实现：
+
+```c++
+struct Node {
+    int key;
+    struct Node *next;
+}
+
+class List {
+    struct Node *head;
+    pthread_mutex_t lock;
+    
+    List() {
+        pthread_mutex_init(&this->lock, NULL);
+    }
+    
+    ~List() {
+        pthread_mutex_destory(&this->lock);
+    }
+    
+    void Insert(int key) throw (std::bad_alloc);
+    void Modify(int key, int index) throw (std::bad_alloc);
+    void Lookup(int index);
+    void Delete(int index);
+    
+    int InsertSafe(int key);
+    int ModifySafe(int key, int index);
+    int LookupSafe(int index);
+    int DeleteSafe(int index);
+}
+```
+
+相当于是在普通的 List 中加了一把锁。
+
+在不用考虑并发的情况下，代码可以这么写：
+
+```c++
+void List::Insert(int key) throw (std::bad_alloc) {
+    Node *node = new Node(); // might throw std::bad_alloc
+    node->key = key;
+    node->next = this->head;
+    this->head = node;
+}
+```
+
+那么为了实现线程安全性，我们很自然地会这么写：
+
+```c++
+int List::InsertSafe(int key) {
+    pthread_mutex_lock(&this->lock);
+    List::Insert(key);
+    pthread_mutex_unlock(&this->lock);
+    return 0;
+}
+```
+
+但是显然，`Insert` 函数没有考虑到分配失败的问题。
+
+在 C  的 `malloc`（或者 C++ 的 `nothrow new`）失败时，会返回一个 NULL（或者 `nullptr`）指针。
+
+而这里用的 C++ 普通 `new` 则会直接抛出 `std::bad_alloc` 异常。
+
+因此 `InsertSafe` 可能会这么写错误处理代码：
+
+```c++
+int List::InsertSafe(int key) {
+    pthread_mutex_lock(&this->lock);
+    try {
+    	List::Insert(key);
+    } catch (std::bad_alloc) {
+        std::cerr << "failed to allocate memory" << std::endl;
+        // lock didn't get released!
+        return -1;
+    }
+    pthread_mutex_unlock(&this->lock);
+    return 0;
+}
+```
+
+很明显的错误：过早返回导致死锁。
+
+因此实际上我们一般会这么写代码：
+
+```c++
+int List::InsertSafe(int key) {
+    pthread_mutex_lock(&this->lock);
+    int err = 0;
+    try {
+    	List::Insert(key);
+    } catch (std::bad_alloc) {
+        err = 1;
+        std::cerr << "failed to allocate memory" << std::endl;
+        goto ret;
+    }
+
+ret:
+    pthread_mutex_unlock(&this->lock);
+    return 0;
+}
+```
+
+通过「~~世界线~~控制流收束」到统一的释放代码，避免过早 `return`。
+
+如果是 Python 的话可以用 `try - catch - finally` 的语法：
+
+```python
+def insertSafe(self, key: int) -> int:
+    pthread_mutex_lock(self.lock)
+    err: int = 0
+    try:
+    	self.insert(key)
+    except std.BadAllocError:
+        err = 1
+        print("failed to allocate memory")
+    finally:
+		pthread_mutex_unlock(self.lock)
+    	return err
+```
+
+确保释放代码总是被运行。
+
+> 据说 Linux 内核中有 $40\%$ 的 Bug 都是因为「过早返回的控制流」造成的。
+
+但是，有没有更好的办法？
+
+考虑到一件事情：C++ 的 `new`（和 `delete`）师从 `xxalloc` 和 `free`，都是线程安全的。并且，用字面值设定新创建的对象的字段也不存在竞争。因此，我们可以尽量延迟拿锁的时间：
+
+```c++
+int List::InsertSafe(int key) {
+    
+    Node *node;
+    try {
+        node = new Node(); // might throw std::bad_alloc
+    } catch (std::bad_alloc) {
+        return -1;
+    }
+    node->key = key;
+    
+    // everything above isn't related to concurrency
+    
+    pthread_mutex_lock(&this->lock);
+    node->next = this->head;
+    this->head = node;
+    pthread_mutex_unlock(&this->lock);
+    return 0;
+}
+```
+
+这样，连带地把 Early-Return 的 Bug 修了，同时还提高了性能（分配内存时没有必要占锁）。
+
+但是，`Lookup` 就没那么好运；基本全是指针遍历，都得加锁。
+
+```c++
+int List::LookupSafe(int key) {
+    int rv = -1;
+    pthread_mutex_lock(&this->lock);
+    Node *current = this->head;
+    while (current) {
+        if (current->key == key) {
+            rv = 0;
+            break;
+        }
+        current = current->next;
+    }
+    pthread_mutex_unlock(&this->lock);
+    return rv;
+}
+```
+
+> `Lookup` 还挺简单的，如果有这个 Key 就返回 0；否则返回 1。
+
+### Optimization Idea
+
+可能会想：「拿一把全局的大锁多耗时啊！应该对每一个节点分别加锁，避免大家一起等。」
+
+这种思路称之为 Lock Coupling。由一大串锁链组成。尽管他确实减少了一些竞争，但是遗憾的是光是在那么多位置拿锁、等锁就会产生大量的 Overhead，最终导致这一方案完全不可行。
+
+> MORE CONCURRENCY ISN'T NECESSARILY FASTER!
+>
+> 并非把程序并行起来，它的运行就会加快！如果你的锁设计写得不好，轻则性能降低，重则产生错误。
+
+但是，对于特殊的 QueueList，其所有操作仅有「Enqueue」和「Dequeue」，这样如果我们对队头元素和队尾元素加锁的话，就能有效地提升性能（在元素较多的情况下，Enqueue 和 Dequeue 实现并行）。
+
+## Hash Table
+
+另一种「加速」的策略。
+
+既然我们直接把链表拆成一个个的锁，粒度太细，那么干脆采用 Hashtable 的方式，把锁拆分成若干个 Bucket 进行处理。
+
+```python
+class NodeList:
+    pass
+    # containing node list definitions
+
+class HashList:
+    
+    bucket_count: int
+    buckets: list[NodeList]
+    
+    def __init__(self, bucket_count: int):
+        self.bucket_count = bucket_count
+        self.buckets = []
+        for _ in range(bucket_count):
+            self.buckets.append(NodeList())
+            
+    def insert(key: int):
+        buckets[key % bucket_count].insert(key)
+        
+    def lookup(key: int) -> bool:
+        return buckets[key % bucket_count].lookup(key)
+```
+
+这样，落在不同 Buckets 中的 `key` 操作便不会互相竞争了。真好！
+
+![image-20201019134607878](2-23-con-ds.assets/image-20201019134607878.png)
+
+> 可以看到性能提升很大。
 

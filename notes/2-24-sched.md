@@ -128,3 +128,24 @@ while True:
 
 ### Strategies
 
+#### Single-Queue Multiprocessor Scheduling
+
+> 简称是 SQMS。
+
+最简单的一种实现方法。
+
+所有的任务都放一个队列里。需要调度的话就从队列中 `dequeue()`。
+
+优点：
+
+* 实现简单。
+
+缺点：
+
+* 必须要全局锁。
+* 不可缩放。核心增加时性能大降。
+* 无法实现 Cache Affinity。
+
+![image-20201022170703297](2-24-sched.assets/image-20201022170703297.png)
+
+大概就是这个样子的。可以看到几乎每个进程都在不同 Cores 之间反复切换。性能极低。
